@@ -4,19 +4,19 @@ import React, { useReducer, useEffect } from "react";
 type Column = {
   id: string;
   title: string;
-  cards: Card[];
 };
 
 type Card = {
   id: string;
   text: string;
+  columnId: string;
 };
 
 type State = {
   columns: Column[];
+  cards: Card[];
   modal: {
     isOpen: boolean;
-    columnId: string | null;
     cardId: string | null;
   };
 };
@@ -24,11 +24,8 @@ type State = {
 type Action =
   | { type: "ADD_COLUMN"; payload: string }
   | { type: "ADD_CARD"; payload: { columnId: string; text: string } }
-  | {
-      type: "UPDATE_CARD";
-      payload: { columnId: string; cardId: string; text: string };
-    }
-  | { type: "OPEN_MODAL"; payload: { columnId: string; cardId: string } }
+  | { type: "UPDATE_CARD"; payload: { cardId: string; text: string } }
+  | { type: "OPEN_MODAL"; payload: { cardId: string } }
   | { type: "CLOSE_MODAL" };
 
 // Reducer function
@@ -39,38 +36,28 @@ function reducer(state: State, action: Action): State {
         ...state,
         columns: [
           ...state.columns,
-          { id: Date.now().toString(), title: action.payload, cards: [] },
+          { id: Date.now().toString(), title: action.payload },
         ],
       };
     case "ADD_CARD":
       return {
         ...state,
-        columns: state.columns.map((column) =>
-          column.id === action.payload.columnId
-            ? {
-                ...column,
-                cards: [
-                  ...column.cards,
-                  { id: Date.now().toString(), text: action.payload.text },
-                ],
-              }
-            : column,
-        ),
+        cards: [
+          ...state.cards,
+          {
+            id: Date.now().toString(),
+            text: action.payload.text,
+            columnId: action.payload.columnId,
+          },
+        ],
       };
     case "UPDATE_CARD":
       return {
         ...state,
-        columns: state.columns.map((column) =>
-          column.id === action.payload.columnId
-            ? {
-                ...column,
-                cards: column.cards.map((card) =>
-                  card.id === action.payload.cardId
-                    ? { ...card, text: action.payload.text }
-                    : card,
-                ),
-              }
-            : column,
+        cards: state.cards.map((card) =>
+          card.id === action.payload.cardId
+            ? { ...card, text: action.payload.text }
+            : card,
         ),
       };
     case "OPEN_MODAL":
@@ -78,7 +65,6 @@ function reducer(state: State, action: Action): State {
         ...state,
         modal: {
           isOpen: true,
-          columnId: action.payload.columnId,
           cardId: action.payload.cardId,
         },
       };
@@ -87,7 +73,6 @@ function reducer(state: State, action: Action): State {
         ...state,
         modal: {
           isOpen: false,
-          columnId: null,
           cardId: null,
         },
       };
@@ -99,13 +84,13 @@ function reducer(state: State, action: Action): State {
 function App() {
   const [state, dispatch] = useReducer(reducer, {
     columns: [
-      { id: "1", title: "To Do", cards: [] },
-      { id: "2", title: "In Progress", cards: [] },
-      { id: "3", title: "Done", cards: [] },
+      { id: "1", title: "To Do" },
+      { id: "2", title: "In Progress" },
+      { id: "3", title: "Done" },
     ],
+    cards: [],
     modal: {
       isOpen: false,
-      columnId: null,
       cardId: null,
     },
   });
@@ -115,17 +100,18 @@ function App() {
       <div className="m-0 flex h-screen flex-col border-green-500 p-0">
         <Header />
         <div className="flex h-full w-full items-center justify-center border-2 border-indigo-200 bg-indigo-100">
-          <Board columns={state.columns} dispatch={dispatch} />
+          <Board
+            columns={state.columns}
+            cards={state.cards}
+            dispatch={dispatch}
+          />
         </div>
       </div>
       {state.modal.isOpen && (
         <CardModal
-          card={state.columns
-            .find((col) => col.id === state.modal.columnId)
-            ?.cards.find((card) => card.id === state.modal.cardId)}
+          card={state.cards.find((card) => card.id === state.modal.cardId)}
           onClose={() => dispatch({ type: "CLOSE_MODAL" })}
           dispatch={dispatch}
-          columnId={state.modal.columnId!}
         />
       )}
     </>
@@ -134,15 +120,22 @@ function App() {
 
 function Board({
   columns,
+  cards,
   dispatch,
 }: {
   columns: Column[];
+  cards: Card[];
   dispatch: React.Dispatch<Action>;
 }) {
   return (
     <div className="flex h-full w-full flex-row items-start justify-start gap-4 bg-gray-200 p-4">
       {columns.map((column) => (
-        <CardColumn key={column.id} column={column} dispatch={dispatch} />
+        <CardColumn
+          key={column.id}
+          column={column}
+          cards={cards.filter((card) => card.columnId === column.id)}
+          dispatch={dispatch}
+        />
       ))}
       <NewColumn dispatch={dispatch} />
     </div>
@@ -151,9 +144,11 @@ function Board({
 
 function CardColumn({
   column,
+  cards,
   dispatch,
 }: {
   column: Column;
+  cards: Card[];
   dispatch: React.Dispatch<Action>;
 }) {
   const handleAddCard = (text: string) => {
@@ -163,13 +158,8 @@ function CardColumn({
   return (
     <div className="flex h-full w-80 flex-col items-start justify-start gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-100 p-2">
       <span className="text-md p-2 font-bold text-black">{column.title}</span>
-      {column.cards.map((card) => (
-        <Card
-          key={card.id}
-          card={card}
-          columnId={column.id}
-          dispatch={dispatch}
-        />
+      {cards.map((card) => (
+        <Card key={card.id} card={card} dispatch={dispatch} />
       ))}
       <AddCardInput onAddCard={handleAddCard} />
     </div>
@@ -178,17 +168,15 @@ function CardColumn({
 
 function Card({
   card,
-  columnId,
   dispatch,
 }: {
   card: Card;
-  columnId: string;
   dispatch: React.Dispatch<Action>;
 }) {
   const handleClick = () => {
     dispatch({
       type: "OPEN_MODAL",
-      payload: { columnId, cardId: card.id },
+      payload: { cardId: card.id },
     });
   };
 
@@ -208,19 +196,17 @@ function CardModal({
   card,
   onClose,
   dispatch,
-  columnId,
 }: {
   card: Card | undefined;
   onClose: () => void;
   dispatch: React.Dispatch<Action>;
-  columnId: string;
 }) {
   if (!card) return null;
 
   const handleUpdate = (text: string) => {
     dispatch({
       type: "UPDATE_CARD",
-      payload: { columnId, cardId: card.id, text },
+      payload: { cardId: card.id, text },
     });
   };
 
