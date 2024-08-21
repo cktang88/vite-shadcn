@@ -14,6 +14,11 @@ type Card = {
 
 type State = {
   columns: Column[];
+  modal: {
+    isOpen: boolean;
+    columnId: string | null;
+    cardId: string | null;
+  };
 };
 
 type Action =
@@ -22,7 +27,9 @@ type Action =
   | {
       type: "UPDATE_CARD";
       payload: { columnId: string; cardId: string; text: string };
-    };
+    }
+  | { type: "OPEN_MODAL"; payload: { columnId: string; cardId: string } }
+  | { type: "CLOSE_MODAL" };
 
 // Reducer function
 function reducer(state: State, action: Action): State {
@@ -66,6 +73,24 @@ function reducer(state: State, action: Action): State {
             : column,
         ),
       };
+    case "OPEN_MODAL":
+      return {
+        ...state,
+        modal: {
+          isOpen: true,
+          columnId: action.payload.columnId,
+          cardId: action.payload.cardId,
+        },
+      };
+    case "CLOSE_MODAL":
+      return {
+        ...state,
+        modal: {
+          isOpen: false,
+          columnId: null,
+          cardId: null,
+        },
+      };
     default:
       return state;
   }
@@ -78,6 +103,11 @@ function App() {
       { id: "2", title: "In Progress", cards: [] },
       { id: "3", title: "Done", cards: [] },
     ],
+    modal: {
+      isOpen: false,
+      columnId: null,
+      cardId: null,
+    },
   });
 
   return (
@@ -88,6 +118,16 @@ function App() {
           <Board columns={state.columns} dispatch={dispatch} />
         </div>
       </div>
+      {state.modal.isOpen && (
+        <CardModal
+          card={state.columns
+            .find((col) => col.id === state.modal.columnId)
+            ?.cards.find((card) => card.id === state.modal.cardId)}
+          onClose={() => dispatch({ type: "CLOSE_MODAL" })}
+          dispatch={dispatch}
+          columnId={state.modal.columnId!}
+        />
+      )}
     </>
   );
 }
@@ -145,6 +185,38 @@ function Card({
   columnId: string;
   dispatch: React.Dispatch<Action>;
 }) {
+  const handleClick = () => {
+    dispatch({
+      type: "OPEN_MODAL",
+      payload: { columnId, cardId: card.id },
+    });
+  };
+
+  return (
+    <div
+      className="flex w-full cursor-pointer items-start justify-start rounded-xl border-2 border-indigo-200 bg-gray-200"
+      onClick={handleClick}
+    >
+      <div className="flex w-full flex-col items-start justify-start rounded-xl bg-white p-2">
+        <span className="text-md text-black">{card.text}</span>
+      </div>
+    </div>
+  );
+}
+
+function CardModal({
+  card,
+  onClose,
+  dispatch,
+  columnId,
+}: {
+  card: Card | undefined;
+  onClose: () => void;
+  dispatch: React.Dispatch<Action>;
+  columnId: string;
+}) {
+  if (!card) return null;
+
   const handleUpdate = (text: string) => {
     dispatch({
       type: "UPDATE_CARD",
@@ -153,13 +225,21 @@ function Card({
   };
 
   return (
-    <div className="flex w-full items-start justify-start rounded-xl border-2 border-indigo-200 bg-gray-200">
-      <div className="flex w-full flex-col items-start justify-start rounded-xl bg-white p-2">
-        <input
-          className="text-md w-full bg-transparent text-black"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+        <h2 className="mb-4 text-xl font-bold">Card Details</h2>
+        <textarea
+          className="mb-4 w-full rounded border p-2"
           value={card.text}
           onChange={(e) => handleUpdate(e.target.value)}
+          rows={4}
         />
+        <button
+          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+          onClick={onClose}
+        >
+          Close
+        </button>
       </div>
     </div>
   );
