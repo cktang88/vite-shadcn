@@ -10,6 +10,17 @@ type Card = {
   id: string;
   text: string;
   columnId: string;
+  createdAt: string;
+  author: string;
+  lastEdited: string;
+  comments: Comment[];
+};
+
+type Comment = {
+  id: string;
+  text: string;
+  author: string;
+  createdAt: string;
 };
 
 type State = {
@@ -24,11 +35,18 @@ type State = {
 
 type Action =
   | { type: "ADD_COLUMN"; payload: string }
-  | { type: "ADD_CARD"; payload: { columnId: string; text: string } }
+  | {
+      type: "ADD_CARD";
+      payload: { columnId: string; text: string; author: string };
+    }
   | { type: "UPDATE_CARD"; payload: { cardId: string; text: string } }
   | { type: "OPEN_MODAL"; payload: { cardId: string } }
   | { type: "CLOSE_MODAL" }
-  | { type: "SET_SEARCH_TERM"; payload: string };
+  | { type: "SET_SEARCH_TERM"; payload: string }
+  | {
+      type: "ADD_COMMENT";
+      payload: { cardId: string; text: string; author: string };
+    };
 
 // Reducer function
 function reducer(state: State, action: Action): State {
@@ -50,6 +68,10 @@ function reducer(state: State, action: Action): State {
             id: Date.now().toString(),
             text: action.payload.text,
             columnId: action.payload.columnId,
+            createdAt: new Date().toISOString(),
+            author: action.payload.author,
+            lastEdited: new Date().toISOString(),
+            comments: [],
           },
         ],
       };
@@ -58,7 +80,11 @@ function reducer(state: State, action: Action): State {
         ...state,
         cards: state.cards.map((card) =>
           card.id === action.payload.cardId
-            ? { ...card, text: action.payload.text }
+            ? {
+                ...card,
+                text: action.payload.text,
+                lastEdited: new Date().toISOString(),
+              }
             : card,
         ),
       };
@@ -82,6 +108,26 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         searchTerm: action.payload,
+      };
+    case "ADD_COMMENT":
+      return {
+        ...state,
+        cards: state.cards.map((card) =>
+          card.id === action.payload.cardId
+            ? {
+                ...card,
+                comments: [
+                  ...card.comments,
+                  {
+                    id: Date.now().toString(),
+                    text: action.payload.text,
+                    author: action.payload.author,
+                    createdAt: new Date().toISOString(),
+                  },
+                ],
+              }
+            : card,
+        ),
       };
     default:
       return state;
@@ -164,7 +210,14 @@ function CardColumn({
   dispatch: React.Dispatch<Action>;
 }) {
   const handleAddCard = (text: string) => {
-    dispatch({ type: "ADD_CARD", payload: { columnId: column.id, text } });
+    dispatch({
+      type: "ADD_CARD",
+      payload: {
+        columnId: column.id,
+        text,
+        author: "Current User", // Replace with actual user management
+      },
+    });
   };
 
   return (
@@ -213,6 +266,8 @@ function CardModal({
   onClose: () => void;
   dispatch: React.Dispatch<Action>;
 }) {
+  const [newComment, setNewComment] = React.useState("");
+
   if (!card) return null;
 
   const handleUpdate = (text: string) => {
@@ -220,6 +275,27 @@ function CardModal({
       type: "UPDATE_CARD",
       payload: { cardId: card.id, text },
     });
+  };
+
+  const handleAddComment = () => {
+    if (newComment.trim()) {
+      dispatch({
+        type: "ADD_COMMENT",
+        payload: {
+          cardId: card.id,
+          text: newComment.trim(),
+          author: "Current User",
+        },
+      });
+      setNewComment("");
+    }
+  };
+
+  const handleCommentKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleAddComment();
+    }
   };
 
   const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -247,7 +323,10 @@ function CardModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onClick={handleOutsideClick}
     >
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+      <div
+        className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="mb-4 text-xl font-bold">Card Details</h2>
         <textarea
           className="mb-4 w-full rounded border p-2"
@@ -255,6 +334,39 @@ function CardModal({
           onChange={(e) => handleUpdate(e.target.value)}
           rows={4}
         />
+        <div className="mb-4 text-sm">
+          <p>Created by: {card.author}</p>
+          <p>Created at: {new Date(card.createdAt).toLocaleString()}</p>
+          <p>Last edited: {new Date(card.lastEdited).toLocaleString()}</p>
+        </div>
+        <h3 className="mb-2 text-lg font-semibold">Comments</h3>
+        <div className="mb-4 max-h-40 overflow-y-auto">
+          {card.comments?.map((comment) => (
+            <div key={comment.id} className="mb-2 rounded bg-gray-100 p-2">
+              <p>{comment.text}</p>
+              <p className="text-xs text-gray-500">
+                By {comment.author} on{" "}
+                {new Date(comment.createdAt).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="mb-4 flex">
+          <input
+            type="text"
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            onKeyPress={handleCommentKeyPress}
+            placeholder="Add a comment..."
+            className="flex-grow rounded-l border p-2"
+          />
+          <button
+            onClick={handleAddComment}
+            className="rounded-r bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+          >
+            Add
+          </button>
+        </div>
         <button
           className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
           onClick={onClose}
@@ -267,17 +379,48 @@ function CardModal({
 }
 
 function NewColumn({ dispatch }: { dispatch: React.Dispatch<Action> }) {
-  const handleAddColumn = () => {
-    const title = prompt("Enter column title:");
-    if (title) {
-      dispatch({ type: "ADD_COLUMN", payload: title });
+  const [isAdding, setIsAdding] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAddColumn = (title: string) => {
+    if (title.trim()) {
+      dispatch({ type: "ADD_COLUMN", payload: title.trim() });
+      setIsAdding(false);
     }
   };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && e.currentTarget.value.trim() !== "") {
+      handleAddColumn(e.currentTarget.value);
+      e.currentTarget.value = "";
+    }
+  };
+
+  React.useEffect(() => {
+    if (isAdding && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isAdding]);
+
+  if (isAdding) {
+    return (
+      <div className="flex w-80 flex-col items-start justify-start gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-100 p-2">
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Enter column title..."
+          className="w-full rounded-xl border p-2 text-black"
+          onKeyPress={handleKeyPress}
+          onBlur={() => setIsAdding(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
       className="flex w-80 cursor-pointer flex-col items-start justify-start gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-100 p-2"
-      onClick={handleAddColumn}
+      onClick={() => setIsAdding(true)}
     >
       <span className="text-md p-2 font-bold text-black">+ Add Column</span>
     </div>
