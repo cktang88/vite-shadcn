@@ -1,26 +1,22 @@
-import { useState } from "react";
-
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <>
-      <div className="flex flex-col h-screen border-green-500 p-0 m-0">
-        <div className="flex justify-between items-center w-full p-4 bg-indigo-100 border-b-2 border-indigo-100">
+      <div className="m-0 flex h-screen flex-col border-green-500 p-0">
+        <div className="flex w-full items-center justify-between border-b-2 border-indigo-100 bg-indigo-100 p-4">
           <span className="text-xl font-bold">Trello Clone</span>
           <div className="flex gap-4">
-            <button className="text-black border-2 border-blue-500 hover:bg-blue-700 text-sm font-bold py-2 px-4 rounded">
+            <button className="rounded border-2 border-blue-500 px-4 py-2 text-sm font-bold text-black hover:bg-blue-700">
               Home
             </button>
-            <button className="text-black border-2 border-green-500 hover:bg-green-700 text-sm font-bold py-2 px-4 rounded">
+            <button className="rounded border-2 border-green-500 px-4 py-2 text-sm font-bold text-black hover:bg-green-700">
               About
             </button>
-            <button className="text-black border-2 border-red-500 hover:bg-red-700 text-sm font-bold py-2 px-4 rounded">
+            <button className="rounded border-2 border-red-500 px-4 py-2 text-sm font-bold text-black hover:bg-red-700">
               Contact
             </button>
           </div>
         </div>
-        <div className="bg-indigo-100 border-2 border-indigo-200 flex items-center justify-center w-full h-full">
+        <div className="flex h-full w-full items-center justify-center border-2 border-indigo-200 bg-indigo-100">
           <Board />
         </div>
       </div>
@@ -30,7 +26,7 @@ function App() {
 
 function Board() {
   return (
-    <div className="bg-gray-200 border-2 border-indigo-200 flex items-start justify-center w-full h-full flex-row gap-4 m-4 p-4">
+    <div className="m-4 flex h-full w-full flex-row items-start justify-start gap-4 border-2 border-indigo-200 bg-gray-200 p-4">
       <CardColumn />
       <CardColumn />
       <CardColumn />
@@ -40,7 +36,7 @@ function Board() {
 
 function CardColumn() {
   return (
-    <div className="bg-indigo-100 border-2 border-indigo-200 flex flex-col items-start justify-center w-80 h-full gap-4 p-4 rounded-xl">
+    <div className="flex h-full w-80 flex-col items-start justify-start gap-4 rounded-xl border-2 border-indigo-200 bg-indigo-100 p-4">
       <Card />
       <Card />
       <Card />
@@ -50,8 +46,12 @@ function CardColumn() {
 
 function Card() {
   return (
-    <div className="bg-white border-2 border-indigo-200 flex items-start justify-start rounded-xl w-full py-6">
-      <span className="text-black text-md">foobar</span>
+    <div className="flex w-full items-start justify-start rounded-xl border-2 border-indigo-200 bg-gray-200">
+      <div className="flex w-full flex-col items-start justify-start rounded-xl bg-white p-2">
+        <span className="text-md font-bold text-black">Title</span>
+        <span className="text-md text-black">foobar</span>
+        <div className="text-md text-gray-500">+ Add Item</div>
+      </div>
     </div>
   );
 }
