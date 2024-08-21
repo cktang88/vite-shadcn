@@ -30,6 +30,7 @@ function Board() {
       <CardColumn title="To Do" />
       <CardColumn title="In Progress" />
       <CardColumn title="Done" />
+      <NewColumn />
     </div>
   );
 }
@@ -56,6 +57,14 @@ function Card({ text }: { text: string }) {
       <div className="flex w-full flex-col items-start justify-start rounded-xl bg-white p-2">
         <span className="text-md text-black">{text}</span>
       </div>
+    </div>
+  );
+}
+
+function NewColumn() {
+  return (
+    <div className="flex w-80 flex-col items-start justify-start gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-100 p-2">
+      <span className="text-md p-2 font-bold text-black">+ Add Column</span>
     </div>
   );
 }
