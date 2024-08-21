@@ -19,6 +19,7 @@ type State = {
     isOpen: boolean;
     cardId: string | null;
   };
+  searchTerm: string;
 };
 
 type Action =
@@ -26,7 +27,8 @@ type Action =
   | { type: "ADD_CARD"; payload: { columnId: string; text: string } }
   | { type: "UPDATE_CARD"; payload: { cardId: string; text: string } }
   | { type: "OPEN_MODAL"; payload: { cardId: string } }
-  | { type: "CLOSE_MODAL" };
+  | { type: "CLOSE_MODAL" }
+  | { type: "SET_SEARCH_TERM"; payload: string };
 
 // Reducer function
 function reducer(state: State, action: Action): State {
@@ -76,6 +78,11 @@ function reducer(state: State, action: Action): State {
           cardId: null,
         },
       };
+    case "SET_SEARCH_TERM":
+      return {
+        ...state,
+        searchTerm: action.payload,
+      };
     default:
       return state;
   }
@@ -93,16 +100,21 @@ function App() {
       isOpen: false,
       cardId: null,
     },
+    searchTerm: "",
   });
+
+  const filteredCards = state.cards.filter((card) =>
+    card.text.toLowerCase().includes(state.searchTerm.toLowerCase()),
+  );
 
   return (
     <>
       <div className="m-0 flex h-screen flex-col border-green-500 p-0">
-        <Header />
+        <Header searchTerm={state.searchTerm} dispatch={dispatch} />
         <div className="flex h-full w-full items-center justify-center border-2 border-indigo-200 bg-indigo-100">
           <Board
             columns={state.columns}
-            cards={state.cards}
+            cards={filteredCards}
             dispatch={dispatch}
           />
         </div>
@@ -272,11 +284,28 @@ function NewColumn({ dispatch }: { dispatch: React.Dispatch<Action> }) {
   );
 }
 
-function Header() {
+function Header({
+  searchTerm,
+  dispatch,
+}: {
+  searchTerm: string;
+  dispatch: React.Dispatch<Action>;
+}) {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch({ type: "SET_SEARCH_TERM", payload: e.target.value });
+  };
+
   return (
     <div className="flex w-full items-center justify-between border-b-2 border-indigo-100 bg-indigo-100 p-4">
       <span className="text-xl font-bold">Trello Clone</span>
-      <div className="flex gap-4">
+      <div className="flex items-center gap-4">
+        <input
+          type="text"
+          placeholder="Search cards..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="rounded-md border px-2 py-1 text-sm"
+        />
         <button className="rounded px-4 py-2 text-sm font-bold text-black hover:bg-gray-400">
           Home
         </button>
