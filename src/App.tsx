@@ -5,13 +5,13 @@ function App() {
         <div className="flex w-full items-center justify-between border-b-2 border-indigo-100 bg-indigo-100 p-4">
           <span className="text-xl font-bold">Trello Clone</span>
           <div className="flex gap-4">
-            <button className="rounded border-2 border-blue-500 px-4 py-2 text-sm font-bold text-black hover:bg-blue-700">
+            <button className="rounded px-4 py-2 text-sm font-bold text-black hover:bg-gray-400">
               Home
             </button>
-            <button className="rounded border-2 border-green-500 px-4 py-2 text-sm font-bold text-black hover:bg-green-700">
+            <button className="rounded px-4 py-2 text-sm font-bold text-black hover:bg-gray-400">
               About
             </button>
-            <button className="rounded border-2 border-red-500 px-4 py-2 text-sm font-bold text-black hover:bg-red-700">
+            <button className="rounded px-4 py-2 text-sm font-bold text-black hover:bg-gray-400">
               Contact
             </button>
           </div>
@@ -26,31 +26,35 @@ function App() {
 
 function Board() {
   return (
-    <div className="m-4 flex h-full w-full flex-row items-start justify-start gap-4 border-2 border-indigo-200 bg-gray-200 p-4">
-      <CardColumn />
-      <CardColumn />
-      <CardColumn />
+    <div className="flex h-full w-full flex-row items-start justify-start gap-4 bg-gray-200 p-4">
+      <CardColumn title="To Do" />
+      <CardColumn title="In Progress" />
+      <CardColumn title="Done" />
     </div>
   );
 }
 
-function CardColumn() {
+function CardColumn({ title }: { title: string }) {
   return (
-    <div className="flex h-full w-80 flex-col items-start justify-start gap-4 rounded-xl border-2 border-indigo-200 bg-indigo-100 p-4">
-      <Card />
-      <Card />
-      <Card />
+    <div className="flex h-full w-80 flex-col items-start justify-start gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-100 p-2">
+      <span className="text-md p-2 font-bold text-black">{title}</span>
+      <Card text="some random text" />
+      <Card text="a thing that needs to be done, but a really long text example" />
+      <Card text="what is this" />
+      <input
+        type="text"
+        placeholder="+ Add Item"
+        className="text-md text-black-500 w-full rounded-xl p-2 hover:bg-gray-100"
+      />
     </div>
   );
 }
 
-function Card() {
+function Card({ text }: { text: string }) {
   return (
     <div className="flex w-full items-start justify-start rounded-xl border-2 border-indigo-200 bg-gray-200">
       <div className="flex w-full flex-col items-start justify-start rounded-xl bg-white p-2">
-        <span className="text-md font-bold text-black">Title</span>
-        <span className="text-md text-black">foobar</span>
-        <div className="text-md text-gray-500">+ Add Item</div>
+        <span className="text-md text-black">{text}</span>
       </div>
     </div>
   );
